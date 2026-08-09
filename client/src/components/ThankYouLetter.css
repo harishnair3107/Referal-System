@@ -1,0 +1,30 @@
+.ty-letter {
+  padding: 24px;
+  border-color: rgba(250, 204, 21, 0.2);
+}
+.ty-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.ty-icon { font-size: 32px; }
+.ty-label {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--status-thanked);
+}
+.ty-from { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.ty-body {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.9;
+  white-space: pre-wrap;
+  background: rgba(255,255,255,0.02);
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(250,204,21,0.1);
+}
