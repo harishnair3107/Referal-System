@@ -23,7 +23,7 @@ export default function RequestCard({ request, currentUser }) {
           <div className="avatar avatar-sm">{initials}</div>
           <div>
             <div className="rc-name">{request.author?.name}</div>
-            <div className="rc-time">{new Date(request.createdAt).toLocaleDateString()}</div>
+            <div className="time-highlight">{new Date(request.createdAt).toLocaleDateString()}</div>
           </div>
         </div>
         <span className={`status-badge status-${request.status}`}>

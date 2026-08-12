@@ -2,7 +2,6 @@ import 'dotenv/config';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import { connectDB } from './db.js';
 
 import authRouter from './routes/auth.js';
 import invitesRouter from './routes/invites.js';
@@ -14,7 +13,7 @@ import rankingsRouter from './routes/rankings.js';
 import notificationsRouter from './routes/notifications.js';
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
 
 app.use(
   cors({
@@ -36,8 +35,11 @@ app.use('/api/notifications', notificationsRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
-connectDB()
+import { sequelize } from './models/index.js';
+
+sequelize.sync({ alter: true }) // Automatically updates database tables
   .then(() => {
+    console.log('Database synced');
     app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
   })
   .catch((err) => {

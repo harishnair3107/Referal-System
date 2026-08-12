@@ -1,32 +1,32 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
+import sequelize from '../db.js';
 import bcrypt from 'bcryptjs';
 
-const userSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String, required: true },
-    isAdmin: { type: Boolean, default: false },
-    inviteCode: { type: String }, // the code that was used to register this user
+const User = sequelize.define('User', {
+  _id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  name: { type: DataTypes.STRING, allowNull: false },
+  email: { type: DataTypes.STRING, allowNull: false, unique: true },
+  password: { type: DataTypes.STRING, allowNull: false },
+  isAdmin: { type: DataTypes.BOOLEAN, defaultValue: false },
+  inviteCode: { type: DataTypes.STRING }
+}, {
+  hooks: {
+    beforeSave: async (user) => {
+      if (user.changed('password')) {
+        user.password = await bcrypt.hash(user.password, 12);
+      }
+    }
   },
-  { timestamps: true }
-);
-
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
+  defaultScope: {
+    attributes: { exclude: ['password'] }
+  },
+  scopes: {
+    withPassword: { attributes: {} }
+  }
 });
 
-userSchema.methods.comparePassword = function (plain) {
+User.prototype.comparePassword = function(plain) {
   return bcrypt.compare(plain, this.password);
 };
 
-userSchema.set('toJSON', {
-  transform: (_doc, ret) => {
-    delete ret.password;
-    return ret;
-  },
-});
-
-export default mongoose.model('User', userSchema);
+export default User;

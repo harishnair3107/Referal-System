@@ -50,7 +50,7 @@ export default function RequestDetail({ user }) {
             <div className="avatar">{initials}</div>
             <div>
               <div className="detail-name">{request.author?.name}</div>
-              <div className="detail-time">{new Date(request.createdAt).toLocaleString()}</div>
+              <div className="time-highlight">{new Date(request.createdAt).toLocaleString()}</div>
             </div>
           </div>
           <span className={`status-badge status-${request.status}`}>

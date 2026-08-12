@@ -1,17 +1,11 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
+import sequelize from '../db.js';
 
-const requestSchema = new mongoose.Schema(
-  {
-    title: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
-    author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    status: {
-      type: String,
-      enum: ['open', 'connected', 'referred', 'thanked', 'closed'],
-      default: 'open',
-    },
-  },
-  { timestamps: true }
-);
+const Request = sequelize.define('Request', {
+  _id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  title: { type: DataTypes.STRING, allowNull: false },
+  description: { type: DataTypes.TEXT, allowNull: false },
+  status: { type: DataTypes.ENUM('open', 'connected', 'referred', 'thanked', 'closed'), defaultValue: 'open' }
+});
 
-export default mongoose.model('Request', requestSchema);
+export default Request;

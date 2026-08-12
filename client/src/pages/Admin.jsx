@@ -120,7 +120,7 @@ export default function Admin() {
                     )}
                   </span>
                   <span>{inv.usedBy?.name || '—'}</span>
-                  <span className="text-muted">{new Date(inv.createdAt).toLocaleDateString()}</span>
+                  <span className="time-highlight">{new Date(inv.createdAt).toLocaleDateString()}</span>
                   <span>
                     {!inv.usedBy && (
                       <button className="btn btn-secondary btn-sm" onClick={() => copyLink(inv.code)}>

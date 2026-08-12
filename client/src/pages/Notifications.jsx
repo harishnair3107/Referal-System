@@ -90,7 +90,7 @@ export default function Notifications({ onRead }) {
               <span className="notif-icon">{TYPE_ICON[n.type] || 'ℹ️'}</span>
               <div className="notif-body">
                 <p>{n.message}</p>
-                <span className="notif-time">{new Date(n.createdAt).toLocaleString()}</span>
+                <span className="time-highlight">{new Date(n.createdAt).toLocaleString()}</span>
               </div>
               {!n.read && <span className="unread-dot" />}
             </div>

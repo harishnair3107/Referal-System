@@ -1,12 +1,9 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
+import sequelize from '../db.js';
 
-const referralSchema = new mongoose.Schema(
-  {
-    request: { type: mongoose.Schema.Types.ObjectId, ref: 'Request', required: true },
-    referrer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    description: { type: String, required: true, trim: true },
-  },
-  { timestamps: true }
-);
+const Referral = sequelize.define('Referral', {
+  _id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  description: { type: DataTypes.TEXT, allowNull: false }
+});
 
-export default mongoose.model('Referral', referralSchema);
+export default Referral;

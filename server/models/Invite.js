@@ -1,13 +1,10 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
+import sequelize from '../db.js';
 
-const inviteSchema = new mongoose.Schema(
-  {
-    code: { type: String, required: true, unique: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    usedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-    usedAt: { type: Date, default: null },
-  },
-  { timestamps: true }
-);
+const Invite = sequelize.define('Invite', {
+  _id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  code: { type: DataTypes.STRING, allowNull: false, unique: true },
+  usedAt: { type: DataTypes.DATE, defaultValue: null }
+});
 
-export default mongoose.model('Invite', inviteSchema);
+export default Invite;

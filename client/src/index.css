@@ -279,3 +279,17 @@ p { color: var(--text-secondary); }
 @media (max-width: 640px) {
   .page { padding: 20px 14px 48px; }
 }
+
+/* ===== Time Highlight ===== */
+.time-highlight {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--purple);
+  background: rgba(160, 90, 255, 0.12);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(160, 90, 255, 0.25);
+  letter-spacing: 0.02em;
+}

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import Notification from '../models/Notification.js';
+import { Notification } from '../models/index.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -7,9 +7,11 @@ const router = Router();
 // GET /api/notifications – current user's notifications (newest first)
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const notifications = await Notification.find({ user: req.user._id })
-      .sort({ createdAt: -1 })
-      .limit(50);
+    const notifications = await Notification.findAll({
+      where: { userId: req.user._id },
+      order: [['createdAt', 'DESC']],
+      limit: 50
+    });
     res.json({ notifications });
   } catch (err) {
     console.error(err);
@@ -20,7 +22,10 @@ router.get('/', requireAuth, async (req, res) => {
 // PATCH /api/notifications/read-all – mark all as read
 router.patch('/read-all', requireAuth, async (req, res) => {
   try {
-    await Notification.updateMany({ user: req.user._id, read: false }, { read: true });
+    await Notification.update(
+      { read: true },
+      { where: { userId: req.user._id, read: false } }
+    );
     res.json({ ok: true });
   } catch (err) {
     console.error(err);
@@ -31,9 +36,9 @@ router.patch('/read-all', requireAuth, async (req, res) => {
 // PATCH /api/notifications/:id/read – mark one as read
 router.patch('/:id/read', requireAuth, async (req, res) => {
   try {
-    await Notification.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id },
-      { read: true }
+    await Notification.update(
+      { read: true },
+      { where: { _id: req.params.id, userId: req.user._id } }
     );
     res.json({ ok: true });
   } catch (err) {

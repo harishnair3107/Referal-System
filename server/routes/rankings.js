@@ -1,8 +1,5 @@
 import { Router } from 'express';
-import User from '../models/User.js';
-import Connection from '../models/Connection.js';
-import Referral from '../models/Referral.js';
-import Thanks from '../models/Thanks.js';
+import { User, Connection, Referral, Thanks } from '../models/index.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -10,13 +7,13 @@ const router = Router();
 // GET /api/rankings – leaderboard of all members
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const users = await User.find().lean();
+    const users = await User.findAll();
 
     const rankings = await Promise.all(
       users.map(async (u) => {
-        const referralsMade = await Referral.countDocuments({ referrer: u._id });
-        const thankYousReceived = await Thanks.countDocuments({ to: u._id });
-        const connectionsMade = await Connection.countDocuments({ referrer: u._id });
+        const referralsMade = await Referral.count({ where: { referrerId: u._id } });
+        const thankYousReceived = await Thanks.count({ where: { toId: u._id } });
+        const connectionsMade = await Connection.count({ where: { referrerId: u._id } });
         return {
           _id: u._id,
           name: u.name,

@@ -63,7 +63,7 @@ export default function Referring() {
                     <div className="avatar avatar-sm">{initials}</div>
                     <div>
                       <div className="rc-name">{req.author?.name}</div>
-                      <div className="rc-time">Connected {new Date(c.createdAt).toLocaleDateString()}</div>
+                      <div className="time-highlight">Connected {new Date(c.createdAt).toLocaleDateString()}</div>
                     </div>
                   </div>
                   <span className={`status-badge status-${req.status}`}>

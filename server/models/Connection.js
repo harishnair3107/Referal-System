@@ -1,13 +1,12 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
+import sequelize from '../db.js';
 
-const connectionSchema = new mongoose.Schema(
-  {
-    request: { type: mongoose.Schema.Types.ObjectId, ref: 'Request', required: true },
-    referrer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  },
-  { timestamps: true }
-);
+const Connection = sequelize.define('Connection', {
+  _id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true }
+}, {
+  indexes: [
+    { unique: true, fields: ['requestId', 'referrerId'] }
+  ]
+});
 
-connectionSchema.index({ request: 1, referrer: 1 }, { unique: true });
-
-export default mongoose.model('Connection', connectionSchema);
+export default Connection;

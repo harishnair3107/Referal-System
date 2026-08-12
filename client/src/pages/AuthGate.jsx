@@ -83,11 +83,11 @@ export default function AuthGate({ onAuth }) {
           )}
           <div className="field">
             <label>Email</label>
-            <input type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" required autoComplete="email" />
+            <input type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" required autoComplete="off" />
           </div>
           <div className="field">
             <label>Password</label>
-            <input type="password" value={form.password} onChange={set('password')} placeholder="••••••••" required autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
+            <input type="password" value={form.password} onChange={set('password')} placeholder="••••••••" required autoComplete="new-password" />
           </div>
           {mode === 'register' && !isFirstUser && (
             <div className="field">

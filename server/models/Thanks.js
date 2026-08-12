@@ -1,13 +1,9 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
+import sequelize from '../db.js';
 
-const thanksSchema = new mongoose.Schema(
-  {
-    request: { type: mongoose.Schema.Types.ObjectId, ref: 'Request', required: true },
-    from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    to: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    letter: { type: String, required: true },
-  },
-  { timestamps: true }
-);
+const Thanks = sequelize.define('Thanks', {
+  _id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  letter: { type: DataTypes.TEXT, allowNull: false }
+});
 
-export default mongoose.model('Thanks', thanksSchema);
+export default Thanks;

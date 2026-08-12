@@ -81,7 +81,10 @@ export default function ThreadView({ thread, currentUser, onRefresh }) {
               return (
                 <div key={c._id} className="connection-item">
                   <div className="avatar avatar-sm">{ini}</div>
-                  <span>{c.referrer?.name}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span>{c.referrer?.name}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{new Date(c.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
               );
             })}
@@ -92,7 +95,10 @@ export default function ThreadView({ thread, currentUser, onRefresh }) {
       {/* Referral detail */}
       {referral && (
         <div className="thread-section glass-card">
-          <h4 className="section-title">📋 Referral Submitted</h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <h4 className="section-title" style={{ marginBottom: 0 }}>📋 Referral Submitted</h4>
+            <span className="time-highlight">{new Date(referral.createdAt).toLocaleString()}</span>
+          </div>
           <div className="referral-by">by <strong>{referral.referrer?.name}</strong></div>
           <p className="referral-text">{referral.description}</p>
         </div>
@@ -101,7 +107,10 @@ export default function ThreadView({ thread, currentUser, onRefresh }) {
       {/* Thank you letter */}
       {thanks && (
         <div className="thread-section glass-card thanks-card">
-          <h4 className="section-title">💌 Thank You Letter</h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <h4 className="section-title" style={{ marginBottom: 0 }}>💌 Thank You Letter</h4>
+            <span className="time-highlight">{new Date(thanks.createdAt).toLocaleString()}</span>
+          </div>
           <pre className="letter-text">{thanks.letter}</pre>
         </div>
       )}
@@ -154,7 +163,7 @@ export default function ThreadView({ thread, currentUser, onRefresh }) {
                 <div className="comment-content">
                   <div className="comment-meta">
                     <strong>{c.author?.name}</strong>
-                    <span className="comment-time">{new Date(c.createdAt).toLocaleString()}</span>
+                    <span className="time-highlight">{new Date(c.createdAt).toLocaleString()}</span>
                   </div>
                   <p>{c.text}</p>
                 </div>
