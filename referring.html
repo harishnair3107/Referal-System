@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Referral - Referring</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #0f172a; color: white; }
+    .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #334155; }
+    .btn { background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; display:inline-block; margin-top: 1rem; }
+    .btn:hover { background: #2563eb; }
+    textarea { width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  
+  <div class="container">
+    <h1 style="margin-bottom: 2rem;">Requests You're Referring</h1>
+    <div id="connections-container">
+      <div style="text-align:center; padding: 2rem;"><span class="spinner"></span> Loading...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api } from './js/api.js';
+    import { renderNavbar } from './js/navbar.js';
+
+    async function init() {
+      const user = await renderNavbar();
+      if(!user) return;
+      loadConnections();
+    }
+
+    async function loadConnections() {
+      const container = document.getElementById('connections-container');
+      try {
+        const { connections } = await api.connections.referring();
+        if (connections.length === 0) {
+          container.innerHTML = '<p style="color:#94a3b8; text-align:center;">You have not connected to any requests yet.</p>';
+          return;
+        }
+
+        container.innerHTML = connections.map(conn => {
+          const req = conn.request;
+          let html = `
+            <div class="card">
+              <h3 style="margin-top:0;"><a href="request.html?id=${req._id}" style="color:white;">${escapeHTML(req.title)}</a></h3>
+              <p style="color:#94a3b8; font-size:0.875rem;">Requested by ${escapeHTML(req.author.name)}</p>
+          `;
+
+          if (req.status === 'connected') {
+            html += `
+              <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid #334155;">
+                <p style="font-size:0.875rem; color:#94a3b8; margin-bottom:0.5rem;">Submit your official referral here once done:</p>
+                <form onsubmit="submitReferral(event, '${req._id}')">
+                  <textarea id="ref-desc-${req._id}" rows="3" placeholder="I referred them on the internal portal..." required></textarea>
+                  <button class="btn" type="submit">Submit Referral</button>
+                </form>
+              </div>
+            `;
+          } else {
+            html += `<p style="color:#10b981; font-weight:600; margin-top:1rem;">✓ Referral Submitted</p>`;
+          }
+
+          html += `</div>`;
+          return html;
+        }).join('');
+      } catch (err) {
+        container.innerHTML = `<p style="color:#ef4444;">Failed to load connections</p>`;
+      }
+    }
+
+    window.submitReferral = async (e, reqId) => {
+      e.preventDefault();
+      const desc = document.getElementById(`ref-desc-${reqId}`).value;
+      try {
+        await api.referrals.submit(reqId, { description: desc });
+        loadConnections();
+      } catch(err) {
+        alert(err.message);
+      }
+    };
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    init();
+  </script>
+</body>
+</html>

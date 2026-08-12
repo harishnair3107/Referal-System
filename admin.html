@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Referral - Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #0f172a; color: white; }
+    .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+    .btn { background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; }
+    .btn:hover { background: #2563eb; }
+    .btn-copy { background: #10b981; margin-left: 0.5rem; font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid #334155; }
+    th { color: #94a3b8; font-size: 0.875rem; text-transform: uppercase; }
+    .badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; }
+    .badge-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .badge-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  
+  <div class="container" id="admin-content" style="display:none;">
+    <h1>Admin Dashboard</h1>
+    
+    <div class="card">
+      <h2>Generate Invite Link</h2>
+      <p style="color:#94a3b8; font-size:0.875rem;">Create a unique link to invite a new member.</p>
+      <button class="btn" id="generate-btn">Generate New Invite</button>
+      <div style="margin-top:1rem; overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Used By</th>
+            </tr>
+          </thead>
+          <tbody id="invites-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Members Overview</h2>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Connections</th>
+              <th>Referrals</th>
+              <th>Thanks</th>
+              <th>Joined</th>
+            </tr>
+          </thead>
+          <tbody id="members-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api } from './js/api.js';
+    import { renderNavbar } from './js/navbar.js';
+
+    async function init() {
+      const user = await renderNavbar();
+      if(!user) return;
+      if(!user.isAdmin) {
+        window.location.href = 'feed.html';
+        return;
+      }
+      document.getElementById('admin-content').style.display = 'block';
+      loadData();
+    }
+
+    async function loadData() {
+      try {
+        const [invData, memData] = await Promise.all([
+          api.invites.list(),
+          api.invites.listMembers()
+        ]);
+        
+        const host = window.location.origin;
+
+        document.getElementById('invites-tbody').innerHTML = invData.invites.map(inv => {
+          const link = `${host}/index.html?invite=${inv.code}`;
+          return `
+            <tr>
+              <td>
+                <span style="font-family:monospace; background:#0f172a; padding:0.25rem 0.5rem; border-radius:4px;">${inv.code}</span>
+                ${!inv.usedBy ? `<button class="btn btn-copy" onclick="navigator.clipboard.writeText('${link}')">Copy Link</button>` : ''}
+              </td>
+              <td>${inv.usedBy ? '<span class="badge badge-success">Used</span>' : '<span class="badge badge-warning">Unused</span>'}</td>
+              <td style="font-size:0.875rem; color:#94a3b8;">${new Date(inv.createdAt).toLocaleString()}</td>
+              <td>${inv.usedBy ? escapeHTML(inv.usedBy.name) : '-'}</td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('members-tbody').innerHTML = memData.members.map(m => `
+          <tr>
+            <td><strong>${escapeHTML(m.name)}</strong></td>
+            <td>${escapeHTML(m.email)}</td>
+            <td>${m.isAdmin ? '<span class="badge badge-success">Admin</span>' : 'Member'}</td>
+            <td>${m.stats.connections}</td>
+            <td>${m.stats.referrals}</td>
+            <td>${m.stats.thankYous}</td>
+            <td style="font-size:0.875rem; color:#94a3b8;">${new Date(m.createdAt).toLocaleDateString()}</td>
+          </tr>
+        `).join('');
+
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    document.getElementById('generate-btn').onclick = async () => {
+      try {
+        await api.invites.create();
+        loadData();
+      } catch(err) {
+        alert(err.message);
+      }
+    };
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    init();
+  </script>
+</body>
+</html>

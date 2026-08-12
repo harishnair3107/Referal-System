@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Referral - Request Details</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #0f172a; color: white; }
+    .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #334155; }
+    .card-meta { color: #94a3b8; font-size: 0.875rem; }
+    .btn { background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; }
+    .btn:hover { background: #2563eb; }
+    .section-title { font-size: 1.125rem; font-weight: 600; margin: 2rem 0 1rem; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
+    .comment { background: #0f172a; padding: 1rem; border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid #334155; }
+    .comment-meta { color: #94a3b8; font-size: 0.75rem; margin-bottom: 0.25rem; }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  
+  <div class="container" id="main-content">
+    <div style="text-align:center; padding: 2rem;"><span class="spinner"></span> Loading...</div>
+  </div>
+
+  <script type="module">
+    import { api } from './js/api.js';
+    import { renderNavbar } from './js/navbar.js';
+
+    let currentUser = null;
+    let requestData = null;
+
+    async function init() {
+      currentUser = await renderNavbar();
+      if(!currentUser) return;
+      loadRequest();
+    }
+
+    async function loadRequest() {
+      const container = document.getElementById('main-content');
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('id');
+
+      if (!id) {
+        container.innerHTML = '<p>No request ID provided.</p>';
+        return;
+      }
+
+      try {
+        requestData = await api.requests.get(id);
+        const { request, comments, connections, referral, thanks } = requestData;
+        const isAuthor = currentUser._id === request.author._id;
+        const hasConnected = connections.some(c => c.referrer._id === currentUser._id);
+
+        let html = `
+          <div class="card">
+            <div style="display:flex; justify-content:space-between;">
+              <h1 style="margin-top:0;">${escapeHTML(request.title)}</h1>
+              <span style="background:#334155; padding:0.25rem 0.5rem; border-radius:4px; font-size:0.875rem; height:max-content;">${request.status}</span>
+            </div>
+            <div class="card-meta" style="margin-bottom:1rem;">By ${escapeHTML(request.author.name)} • ${new Date(request.createdAt).toLocaleString()}</div>
+            <p>${escapeHTML(request.description)}</p>
+        `;
+
+        if (!isAuthor && request.status === 'open' && !hasConnected) {
+          html += `<button class="btn" id="connect-btn" style="margin-top:1rem;">I can refer this person</button>`;
+        } else if (!isAuthor && hasConnected) {
+          html += `<p style="color:#10b981; font-weight:600;">✓ You have connected to this request</p>`;
+        }
+
+        html += `</div>`;
+
+        if (isAuthor && connections.length > 0) {
+          html += `
+            <div class="section-title">Connections (People offering to refer)</div>
+            ${connections.map(c => `
+              <div class="card" style="padding:1rem;">
+                <strong>${escapeHTML(c.referrer.name)}</strong> offered to refer you.
+              </div>
+            `).join('')}
+          `;
+        }
+
+        if (referral) {
+          html += `
+            <div class="section-title">Referral Submitted</div>
+            <div class="card" style="border-color:#10b981;">
+              <p><strong>${escapeHTML(referral.referrer.name)}</strong> submitted a referral.</p>
+              <p style="color:#94a3b8; font-style:italic;">"${escapeHTML(referral.description)}"</p>
+              ${(isAuthor && !thanks) ? `<button class="btn" id="thanks-btn" style="margin-top:1rem; background:#10b981;">Send Thank You Letter</button>` : ''}
+            </div>
+          `;
+        }
+
+        if (thanks) {
+          html += `
+            <div class="section-title">Thank You Letter</div>
+            <div class="card" style="background:#0f172a; border-left:4px solid #f59e0b;">
+              <pre style="white-space:pre-wrap; font-family:inherit; margin:0;">${escapeHTML(thanks.letter)}</pre>
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="section-title">Comments</div>
+          ${comments.map(c => `
+            <div class="comment">
+              <div class="comment-meta">${escapeHTML(c.author.name)} • ${new Date(c.createdAt).toLocaleString()}</div>
+              <div>${escapeHTML(c.text)}</div>
+            </div>
+          `).join('')}
+          ${comments.length === 0 ? '<p style="color:#94a3b8; font-size:0.875rem;">No comments yet.</p>' : ''}
+          <form id="comment-form" style="margin-top:1rem; display:flex; gap:0.5rem;">
+            <input type="text" id="comment-input" style="flex:1; padding:0.75rem; border-radius:6px; border:1px solid #334155; background:#1e293b; color:white;" placeholder="Write a comment..." required>
+            <button class="btn" type="submit">Post</button>
+          </form>
+        `;
+
+        container.innerHTML = html;
+
+        // Attach event listeners dynamically
+        const connectBtn = document.getElementById('connect-btn');
+        if (connectBtn) {
+          connectBtn.onclick = async () => {
+            try {
+              await api.connections.connect(id);
+              loadRequest();
+            } catch (err) { alert(err.message); }
+          };
+        }
+
+        const thanksBtn = document.getElementById('thanks-btn');
+        if (thanksBtn) {
+          thanksBtn.onclick = async () => {
+            try {
+              await api.thanks.submit(id);
+              loadRequest();
+            } catch (err) { alert(err.message); }
+          };
+        }
+
+        document.getElementById('comment-form').onsubmit = async (e) => {
+          e.preventDefault();
+          const input = document.getElementById('comment-input');
+          try {
+            await api.requests.comment(id, { text: input.value });
+            loadRequest();
+          } catch (err) { alert(err.message); }
+        };
+
+      } catch (err) {
+        container.innerHTML = `<p style="color:#ef4444;">Failed to load request: ${err.message}</p>`;
+      }
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    init();
+  </script>
+</body>
+</html>

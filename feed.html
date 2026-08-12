@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Referral - Feed</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #0f172a; color: white; }
+    .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #334155; }
+    .card-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+    .card-title { font-size: 1.25rem; font-weight: 600; color: white; text-decoration: none; }
+    .card-title:hover { text-decoration: underline; }
+    .card-meta { color: #94a3b8; font-size: 0.875rem; }
+    .btn { background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; text-decoration:none; display:inline-block; }
+    .btn:hover { background: #2563eb; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group input, .form-group textarea { width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <h1>Open Requests</h1>
+      <button class="btn" id="new-req-btn">New Request</button>
+    </div>
+
+    <div id="new-req-form" style="display:none;" class="card">
+      <h3>Create Request</h3>
+      <form id="create-form">
+        <div class="form-group">
+          <input type="text" id="title" placeholder="e.g. Senior Software Engineer at Google" required>
+        </div>
+        <div class="form-group">
+          <textarea id="description" rows="3" placeholder="Briefly describe your background and why you are a good fit..." required></textarea>
+        </div>
+        <button type="submit" class="btn">Submit</button>
+        <button type="button" class="btn" style="background:transparent; color:#94a3b8;" onclick="document.getElementById('new-req-form').style.display='none'">Cancel</button>
+      </form>
+    </div>
+
+    <div id="feed-container">
+      <div style="text-align:center; padding: 2rem;"><span class="spinner"></span> Loading...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api } from './js/api.js';
+    import { renderNavbar } from './js/navbar.js';
+
+    async function init() {
+      const user = await renderNavbar();
+      if(!user) return;
+      loadFeed();
+    }
+
+    document.getElementById('new-req-btn').onclick = () => {
+      document.getElementById('new-req-form').style.display = 'block';
+    };
+
+    document.getElementById('create-form').onsubmit = async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+      try {
+        await api.requests.create({ title, description });
+        document.getElementById('title').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('new-req-form').style.display = 'none';
+        loadFeed();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    async function loadFeed() {
+      const container = document.getElementById('feed-container');
+      try {
+        const { requests } = await api.requests.feed();
+        if (requests.length === 0) {
+          container.innerHTML = '<p style="color:#94a3b8; text-align:center;">No open requests right now.</p>';
+          return;
+        }
+        
+        container.innerHTML = requests.map(req => `
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <a href="request.html?id=${req._id}" class="card-title">${escapeHTML(req.title)}</a>
+                <div class="card-meta">By ${escapeHTML(req.author.name)} • ${new Date(req.createdAt).toLocaleString()}</div>
+              </div>
+              <div><span style="background:#334155; padding:0.25rem 0.5rem; border-radius:4px; font-size:0.875rem;">${req.status}</span></div>
+            </div>
+            <p>${escapeHTML(req.description)}</p>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<p style="color:#ef4444;">Failed to load feed</p>`;
+      }
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    init();
+  </script>
+</body>
+</html>

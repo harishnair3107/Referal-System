@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Referral - My Requests</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #0f172a; color: white; }
+    .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #334155; }
+    .card-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+    .card-title { font-size: 1.25rem; font-weight: 600; color: white; text-decoration: none; }
+    .card-title:hover { text-decoration: underline; }
+    .card-meta { color: #94a3b8; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  
+  <div class="container">
+    <h1 style="margin-bottom: 2rem;">My Requests</h1>
+    <div id="requests-container">
+      <div style="text-align:center; padding: 2rem;"><span class="spinner"></span> Loading...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api } from './js/api.js';
+    import { renderNavbar } from './js/navbar.js';
+
+    async function init() {
+      const user = await renderNavbar();
+      if(!user) return;
+
+      const container = document.getElementById('requests-container');
+      try {
+        const { requests } = await api.requests.mine();
+        if (requests.length === 0) {
+          container.innerHTML = '<p style="color:#94a3b8; text-align:center;">You have not created any requests yet.</p>';
+          return;
+        }
+        
+        container.innerHTML = requests.map(req => `
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <a href="request.html?id=${req._id}" class="card-title">${escapeHTML(req.title)}</a>
+                <div class="card-meta">Created ${new Date(req.createdAt).toLocaleString()}</div>
+              </div>
+              <div><span style="background:#334155; padding:0.25rem 0.5rem; border-radius:4px; font-size:0.875rem;">${req.status}</span></div>
+            </div>
+            <p>${escapeHTML(req.description)}</p>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<p style="color:#ef4444;">Failed to load requests</p>`;
+      }
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    init();
+  </script>
+</body>
+</html>

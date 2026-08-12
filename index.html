@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Referral - Login</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Add minimal structural CSS if needed, style.css should have the rest */
+    body { margin: 0; font-family: sans-serif; background: #0f172a; color: white; }
+    .auth-page { display: flex; justify-content: center; align-items: center; min-height: 100vh; position: relative; overflow: hidden; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px; z-index: 10; border: 1px solid rgba(255,255,255,0.1); }
+    .auth-tabs { display: flex; margin-bottom: 1.5rem; }
+    .auth-tab { flex: 1; padding: 0.75rem; background: transparent; border: none; border-bottom: 2px solid transparent; color: #94a3b8; cursor: pointer; }
+    .auth-tab.active { border-bottom-color: #3b82f6; color: white; }
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; }
+    .field input { width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: white; box-sizing: border-box; }
+    .btn-full { width: 100%; padding: 0.75rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-full:hover { background: #2563eb; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="glass-card">
+      <div style="text-align:center; margin-bottom: 1.5rem;">
+        <h1 style="margin:0;">Referral</h1>
+        <p style="color:#94a3b8; margin-top:0.5rem;">A private community for meaningful referrals</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login">Login</button>
+        <button class="auth-tab" id="tab-register">Register</button>
+      </div>
+
+      <form id="auth-form">
+        <div class="field hidden" id="field-name">
+          <label>Full Name</label>
+          <input type="text" id="name" placeholder="Jane Smith" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="email" placeholder="you@example.com" required autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="new-password">
+        </div>
+        <div class="field hidden" id="field-invite">
+          <label>Invite Code</label>
+          <input type="text" id="inviteCode" placeholder="Enter your invite code" autocomplete="off">
+        </div>
+        
+        <div id="first-user-note" class="hidden" style="margin-bottom:1rem; font-size:0.875rem; color:#f59e0b;">
+          👑 You will be the first user and automatically become <strong>admin</strong>.
+        </div>
+
+        <button class="btn-full" type="submit" id="submit-btn">Sign In</button>
+        <div id="error-msg" style="color:#ef4444; margin-top:1rem; font-size:0.875rem; text-align:center;"></div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api } from './js/api.js';
+
+    let mode = 'login';
+    let isFirstUser = false;
+
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const fieldName = document.getElementById('field-name');
+    const fieldInvite = document.getElementById('field-invite');
+    const firstUserNote = document.getElementById('first-user-note');
+    const submitBtn = document.getElementById('submit-btn');
+    const errorMsg = document.getElementById('error-msg');
+    const form = document.getElementById('auth-form');
+
+    // Check if logged in
+    api.auth.me().then(d => {
+      if(d.user) window.location.href = 'feed.html';
+    }).catch(()=>{});
+
+    // Check if first user
+    api.auth.firstUserCheck().then(d => {
+      if(d.isFirst) isFirstUser = true;
+    }).catch(()=>{});
+
+    // Handle invite code from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('invite');
+    if(code) {
+      document.getElementById('inviteCode').value = code;
+      setMode('register');
+    }
+
+    tabLogin.onclick = () => setMode('login');
+    tabRegister.onclick = () => setMode('register');
+
+    function setMode(newMode) {
+      mode = newMode;
+      errorMsg.textContent = '';
+      if(mode === 'login') {
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+        fieldName.classList.add('hidden');
+        document.getElementById('name').required = false;
+        fieldInvite.classList.add('hidden');
+        document.getElementById('inviteCode').required = false;
+        firstUserNote.classList.add('hidden');
+        submitBtn.textContent = 'Sign In';
+      } else {
+        tabRegister.classList.add('active');
+        tabLogin.classList.remove('active');
+        fieldName.classList.remove('hidden');
+        document.getElementById('name').required = true;
+        if(!isFirstUser) {
+          fieldInvite.classList.remove('hidden');
+          document.getElementById('inviteCode').required = true;
+        } else {
+          firstUserNote.classList.remove('hidden');
+        }
+        submitBtn.textContent = 'Create Account';
+      }
+    }
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      errorMsg.textContent = '';
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        if(mode === 'login') {
+          await api.auth.login({ email, password });
+        } else {
+          const name = document.getElementById('name').value;
+          const inviteCode = document.getElementById('inviteCode').value;
+          await api.auth.register({ name, email, password, inviteCode: inviteCode || undefined });
+        }
+        window.location.href = 'feed.html';
+      } catch (err) {
+        errorMsg.textContent = err.message;
+        submitBtn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Referral - Rankings</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #0f172a; color: white; }
+    .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .rank-card { background: #1e293b; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
+    .rank-number { font-size: 1.5rem; font-weight: bold; width: 40px; color: #64748b; }
+    .rank-number.top-1 { color: #f59e0b; }
+    .rank-number.top-2 { color: #cbd5e1; }
+    .rank-number.top-3 { color: #b45309; }
+    .rank-info { flex: 1; }
+    .rank-name { font-size: 1.125rem; font-weight: 600; }
+    .rank-score { font-size: 1.25rem; font-weight: bold; color: #3b82f6; }
+    .rank-stats { display: flex; gap: 1rem; color: #94a3b8; font-size: 0.875rem; margin-top: 0.25rem; }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  
+  <div class="container">
+    <h1 style="margin-bottom: 2rem; text-align:center;">Community Leaderboard</h1>
+    <div id="rankings-container">
+      <div style="text-align:center; padding: 2rem;"><span class="spinner"></span> Loading...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api } from './js/api.js';
+    import { renderNavbar } from './js/navbar.js';
+
+    async function init() {
+      const user = await renderNavbar();
+      if(!user) return;
+
+      const container = document.getElementById('rankings-container');
+      try {
+        const { rankings } = await api.rankings.list();
+        
+        container.innerHTML = rankings.map((r, i) => `
+          <div class="rank-card">
+            <div class="rank-number ${i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : ''}">#${i + 1}</div>
+            <div class="rank-info">
+              <div class="rank-name">${escapeHTML(r.name)}</div>
+              <div class="rank-stats">
+                <span>🔗 ${r.connectionsMade} connections</span>
+                <span>🤝 ${r.referralsMade} referrals</span>
+                <span>⭐ ${r.thankYousReceived} thanks</span>
+              </div>
+            </div>
+            <div class="rank-score">${r.score} pts</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load rankings</p>`;
+      }
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    init();
+  </script>
+</body>
+</html>
